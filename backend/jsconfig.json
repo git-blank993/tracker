@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "checkJs": true,
+    "maxNodeModuleJsDepth": 2,
+    "target": "ES2022",
+    "module": "NodeNext"
+  },
+  "exclude": ["node_modules"]
+}
