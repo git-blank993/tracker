@@ -1,46 +1,20 @@
 import { Router } from "express";
-import isValidEmail from "../../utils/index.js";
-import Config from "../../config/config.js";
-import pool from "../../db/init.js";
+import Auth, { CredentialError } from "../../models/auth.js";
 
-const { createHmac } = await import("node:crypto");
 const router = Router();
-
+const auth = new Auth();
 router.post("/", async (req, res) => {
   try {
     const { username, email, password } = req.body;
-    if (!username) {
-      res.status(400).send("Provide a valid username");
-      return;
-    }
-    if (!email) {
-      res.status(400).send("Provide valid email");
-      return;
-    }
-    if (!password) {
-      res.status(400).send("Provide valid password");
-      return;
-    }
-    if (username == "" || email == "" || password == "") {
-      res.status(400).send("Provide a valid username, email and password");
-      return;
-    }
-    if (!isValidEmail(email)) {
-      res.status(400).send("Provide a valid email");
-    }
-
-    const hashed = createHmac("sha256", Config.getSecret())
-      .update(password)
-      .digest("hex");
-
-    const query = `INSERT INTO users(username, email, password) VALUES($1,$2,$3)`;
-    const values = [username, email, hashed];
-    const data = await pool.query(query, values);
-    if (data.command == "INSERT") {
-      res.send("User created successfully");
+    const registered = await auth.register(username, email, password);
+    if (registered) {
+      return res.status(200).send("User registered successfully");
     }
   } catch (err) {
     console.error(err);
+    if (err instanceof CredentialError) {
+      res.status(err.statusCode).send(err.message);
+    }
     res.status(500).send("Error creating user");
   }
 });
